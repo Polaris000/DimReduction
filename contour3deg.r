@@ -10,7 +10,7 @@
             engine="standard", screen = list(x = 290, y = -20),
             color = "red", color2 = "white")
 
-  # ball with computed colors
+  # view ball with computed colors
   w <- function(x,y,z) {
       v <- sin(x) + cos(2 * y) * sin(5 * z)
       r <- range(v)
