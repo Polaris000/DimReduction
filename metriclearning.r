@@ -95,22 +95,46 @@ dism <- t(as.matrix(tol[!tol %in% simi]))
 result <- GdmDiag(data, simi, dism)
 
 newData <- result$newData
-print(newData)
+# print(newData)
 
+newData_ <- data.frame(newData)
 
 # plot original data
-color <- c("red", "blue", "green")
-par(mfrow = c(2, 1), mar = rep(0, 4) + 0.1)
-scatterplot3d(data, color = color, cex.symbols = 0.6,
-xlim = range(data[, 1], newData[, 1]),
-ylim = range(data[, 2], newData[, 2]),
-zlim = range(data[, 3], newData[, 3]),
-main = "Original Data")
+color <- c("red", "blue", "yellow")
+# par(mfrow = c(2, 1), mar = rep(0, 4) + 0.1)
+
+get_colors <- function(groups, group.col = palette())
+{
+  groups <- as.factor(groups)
+  ngrps <- length(levels(groups))
+  if(ngrps > length(group.col)) 
+    group.col <- rep(group.col, ngrps)
+  color <- group.col[as.numeric(groups)]
+  names(color) <- as.vector(groups)
+  return(color)
+}
+
+# plot3d(data, col=get_colors(y), cex.symbols = 1,
+# main = "Original Data")
+
 # plot GdmDiag transformed data
-scatterplot3d(newData, color = color, cex.symbols = 0.6,
-xlim = range(data[, 1], newData[, 1]),
-ylim = range(data[, 2], newData[, 2]),
-zlim = range(data[, 3], newData[, 3]),
-main = "Transformed Data")
+# plot3d(newData[, 2:4], col=get_colors(y), cex.symbols = 1, main = "Transformed Data")
 ## End(Not run)
 
+
+simi <- rbind(t(combn(1:50, 2)), t(combn((51):(100), 2)), t(combn((101: 150), 2)))
+temp <- as.data.frame(t(simi))
+
+# all pairs
+tol <- as.data.frame(combn(1:(150), 2))
+
+# define disimilar constrains
+dism <- t(as.matrix(tol[!tol %in% simi]))
+
+# transform data using GdmDiag
+result_ <- GdmDiag(newData_[, 2:4], simi, dism)
+
+newData__ <- result_$newData
+print(newData__)
+
+# https://arxiv.org/pdf/1509.04355.pdf: paper on metric learning
