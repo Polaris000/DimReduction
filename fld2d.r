@@ -33,7 +33,7 @@ plotdata <- function(dat, cols, dim_)
     else if (dim_ == 3)
     {
         rgl_init()
-        rgl.spheres(dat[, 1], dat[, 2], dat[, 3], color = get_colors(dat$Species), r=0.05) 
+        rgl.spheres(dat[, 1], dat[, 2], dat[, 3], color = get_colors(dat$Species), r=0.01) 
         rgl_add_axes(dat[, 1], dat[, 2], dat[, 3], show.bbox = TRUE)
         aspect3d(1,1,1)
     }
@@ -121,8 +121,9 @@ get_colors <- function(groups, group.col = palette())
 
 
 initialize(iris, 3)
-plotdata(data.frame(iris), iris$Species, 3)
+
 model__ <- fld()
+plotdata(model__, iris$Species, 3)
 model_ <- svm(Species ~., data=model__)
 
 plotclassified(model_, model__)

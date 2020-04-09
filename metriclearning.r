@@ -119,7 +119,7 @@ get_colors <- function(groups, group.col = palette())
 
 # plot GdmDiag transformed data
 # plot3d(newData[, 2:4], col=get_colors(y), cex.symbols = 1, main = "Transformed Data")
-## End(Not run)
+# End(Not run)
 
 
 simi <- rbind(t(combn(1:50, 2)), t(combn((51):(100), 2)), t(combn((101: 150), 2)))
