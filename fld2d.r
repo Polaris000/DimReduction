@@ -5,25 +5,55 @@ library(e1071)
 
 X <- NULL
 y <- NULL
-dim <- 3    
+dim <- 3
+
+# TODO:
+# - train test split
+# - add legend to charts
+# - try on different dataset
+# - generate subplots 
+
+rgl_init <- function(new.device = FALSE, bg = "gray", width = 640)
+{ 
+  if( new.device | rgl.cur() == 0 ) 
+  {
+    rgl.open()
+    par3d(windowRect = 50 + c( 0, 0, width, width ) )
+    rgl.bg(color = bg)
+  }
+
+  rgl.clear(type = c("shapes", "bboxdeco"))
+  rgl.viewpoint(theta = 15, phi = 20, zoom = 0.5)
+}
 
 plotdata <- function(dat, cols, dim_)
 {
     if (dim_ == 2)
         plot(dat, col=cols)
-    if (dim_ == 3)
+    else if (dim_ == 3)
     {
-        rgl.open()
-        rgl.points(dat$1, dat$X2, dat$X3, 
-          color = get_colors(dat$Species)) 
-        rgl_add_axes(dat$X1, dat$X2, dat$X3, show.bbox = TRUE)
+        rgl_init()
+        rgl.spheres(dat[, 1], dat[, 2], dat[, 3], color = get_colors(dat$Species), r=0.05) 
+        rgl_add_axes(dat[, 1], dat[, 2], dat[, 3], show.bbox = TRUE)
         aspect3d(1,1,1)
     }
 }
 
-plotclassified <- function(dat, cols)
+plotclassified <- function(model, data)
 {
-    plot(model_, model__)
+    if (dim == 2)
+        plot(model, data)
+    else if (dim == 3)
+    {
+        par(mfrow = c(2, 2)) # 2-by-2 grid of plots
+        par(oma = c(4, 4, 0, 0)) # make room (i.e. the 4's) for the overall x and y axis titles
+        par(mar = c(2, 2, 1, 1)) # make the plots be closer together
+        plot(model, data, X1~X2)
+        plot(model, data, X2~X3)
+        plot(model, data, X3~X1)
+
+        par(mfrow = c(1, 1))
+    }
 }
 
 initialize <- function(dat, dim_)
@@ -42,21 +72,6 @@ fld <- function()
     model__$Species = y
     return(model__)
 }
-
-plot(model__[1:2], col=model__$Species)
-plot(model__, labels=model__$Species)
-
-initialize(iris, 2)
-plotdata(iris, iris$Species, 3)
-model__ <- fld()
-model_ <- svm(Species ~., data=model__)
-# print(model_)
-
-# prints light points on gray background
-# rgl.open()
-# rgl.points(model__$X1, model__$X2, model__$X3, color ="lightgray")
-
-
 
 rgl_add_axes <- function(x, y, z, axis.col = "grey",
                                 xlab = "", ylab="", zlab="", show.plane = TRUE, 
@@ -105,10 +120,10 @@ get_colors <- function(groups, group.col = palette())
 }
 
 
-# rgl.points(model__$X1, model__$X2, model__$X3, 
-#           color = get_colors(model__$Species)) 
-# rgl_add_axes(model__$X1, model__$X2, model__$X3, show.bbox = TRUE)
-# aspect3d(1,1,1)
+initialize(iris, 3)
+plotdata(data.frame(iris), iris$Species, 3)
+model__ <- fld()
+model_ <- svm(Species ~., data=model__)
 
-# Plot original data
+plotclassified(model_, model__)
 
