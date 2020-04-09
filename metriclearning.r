@@ -1,140 +1,167 @@
 library("dml")
 
-
-# https://cran.r-project.org/web/packages/dml/dml.pdf
-
-
 data(iris)
 k <- iris[, -5]
 y <- iris[, 5]
 
 
-# full gdm example
-# set.seed(602)
-# library(MASS)
-# library(scatterplot3d)
-# # generate simulated Gaussian data
-# k = 100
-# m <- matrix(c(1, 0.5, 1, 0.5, 2, -1, 1, -1, 3), nrow =3, byrow = T)
-# x1 <- mvrnorm(k, mu = c(1, 1, 1), Sigma = m)
-# x2 <- mvrnorm(k, mu = c(-1, 0, 0), Sigma = m)
-# data <- rbind(x1, x2)
-# # define similar constrains
-# simi <- rbind(t(combn(1:k, 2)), t(combn((k+1):(2*k), 2)))
-# temp <- as.data.frame(t(simi))
-# tol <- as.data.frame(combn(1:(2*k), 2))
-# # define disimilar constrains
-# dism <- t(as.matrix(tol[!tol %in% simi]))
-# # transform data using GdmDiag
-# result <- GdmDiag(data, simi, dism)
-# newData <- result$newData
-# # plot original data
-# color <- gl(2, k, labels = c("red", "blue"))
-# par(mfrow = c(2, 1), mar = rep(0, 4) + 0.1)
-# scatterplot3d(data, color = color, cex.symbols = 0.6,
-# xlim = range(data[, 1], newData[, 1]),
-# ylim = range(data[, 2], newData[, 2]),
-# zlim = range(data[, 3], newData[, 3]),
-# main = "Original Data")
-# # plot GdmDiag transformed data
-# scatterplot3d(newData, color = color, cex.symbols = 0.6,
-# xlim = range(data[, 1], newData[, 1]),
-# ylim = range(data[, 2], newData[, 2]),
-# zlim = range(data[, 3], newData[, 3]),
 
-# main = "Transformed Data")
-
-
-# diag gmd
-
-## Not run:
-# set.seed(602)
 library(MASS)
 library(scatterplot3d)
-# generate simulated Gaussian data
-# k = 100
-# # m <- matrix(c(1, 0.5, 1, 0.5, 2, -1, 1, -1, 3), nrow =3, byrow = T)
-# # x1 <- mvrnorm(k, mu = c(1, 1, 1), Sigma = m)
-# # x2 <- mvrnorm(k, mu = c(-1, 0, 0), Sigma = m)
-# data <- rbind(x1, x2)
-
-# data:  n * d data matrix. n is the number of data points, d is the dimension of the data.
-# Each data point is a row in the matrix.
-
-# simi:  n * 2 matrix describing the similar constrains. Each row of matrix is serial
-# number of a similar pair in the original data. For example, pair(1, 3) represents
-# the first observation is similar the 3th observation in the original data.
-
-# dism:  n * 2 matrix describing the dissimilar constrains as simi. Each row of matrix
-# is serial number of a dissimilar pair in the original data.
-
-# C0:  numeric, the bound of similar constrains.
-
-# threshold: numeric, the threshold of stoping the learning iteration.
 
 
 data <- k
 k <- 50
 
-# a b c d target
-# d d d d dkf
-# d d d d dkfjd 
-# d d d d dkf
-
 # define similar constrains
-simi <- rbind(t(combn(1:50, 2)), t(combn((51):(100), 2)), t(combn((101: 150), 2)))
-temp <- as.data.frame(t(simi))
 
-# all pairs
-tol <- as.data.frame(combn(1:(150), 2))
-
-# define disimilar constrains
-dism <- t(as.matrix(tol[!tol %in% simi]))
-
-# transform data using GdmDiag
-result <- GdmDiag(data, simi, dism)
-
-newData <- result$newData
-# print(newData)
-
-newData_ <- data.frame(newData)
 
 # plot original data
 color <- c("red", "blue", "yellow")
 # par(mfrow = c(2, 1), mar = rep(0, 4) + 0.1)
 
-get_colors <- function(groups, group.col = palette())
-{
-  groups <- as.factor(groups)
-  ngrps <- length(levels(groups))
-  if(ngrps > length(group.col)) 
-    group.col <- rep(group.col, ngrps)
-  color <- group.col[as.numeric(groups)]
-  names(color) <- as.vector(groups)
-  return(color)
+library(rgl)
+data(iris)
+
+X <- NULL
+y <- NULL
+dim <- 3
+
+# TODO:
+# - train test split
+# - add legend to charts
+# - try on different dataset
+# - generate subplots 
+
+rgl_init <- function(new.device = FALSE, bg = "gray", width = 640)
+{ 
+  if( new.device | rgl.cur() == 0 ) 
+  {
+    rgl.open()
+    par3d(windowRect = 50 + c( 0, 0, width, width ) )
+    rgl.bg(color = bg)
+  }
+
+  rgl.clear(type = c("shapes", "bboxdeco"))
+  rgl.viewpoint(theta = 15, phi = 20, zoom = 0.5)
 }
 
-# plot3d(data, col=get_colors(y), cex.symbols = 1,
-# main = "Original Data")
+plotdata <- function(dat, cols, dim_)
+{
+    if (dim_ == 2)
+        plot(dat[, -ncol(dat)], col=cols)
+    else if (dim_ == 3)
+    {
+        rgl_init()
+        rgl.spheres(dat[, 1], dat[, 2], dat[, 3], color = get_colors(dat$Species), r=0.02) 
+        rgl_add_axes(dat[, 1], dat[, 2], dat[, 3], show.bbox = TRUE)
+        aspect3d(1,1,1)
+    }
+}
 
-# plot GdmDiag transformed data
-# plot3d(newData[, 2:4], col=get_colors(y), cex.symbols = 1, main = "Transformed Data")
-# End(Not run)
+plotclassified <- function(model, data)
+{
+    if (dim == 2)
+        plot(model, data)
+    else if (dim == 3)
+    {
+        par(mfrow = c(2, 2)) # 2-by-2 grid of plots
+        par(oma = c(4, 4, 0, 0)) # make room (i.e. the 4's) for the overall x and y axis titles
+        par(mar = c(2, 2, 1, 1)) # make the plots be closer together
+        plot(model, data, X1~X2)
+        plot(model, data, X2~X3)
+        plot(model, data, X3~X1)
+        par(mfrow = c(1, 1))
+    }
+}
 
+initialize <- function(dat, dim_)
+{
+    rows <- nrow(dat)
+    cols <- ncol(dat)
 
-simi <- rbind(t(combn(1:50, 2)), t(combn((51):(100), 2)), t(combn((101: 150), 2)))
-temp <- as.data.frame(t(simi))
+    # kernelizing the model
+    X <<- kmatrixGauss(dat[, -cols])
+    y <<- dat[, cols]
+    dim <<- dim_
+}
 
-# all pairs
-tol <- as.data.frame(combn(1:(150), 2))
+applydml <- function(modeltype)
+{
+    simi <- rbind(t(combn(1:50, 2)), t(combn((51):(100), 2)), t(combn((101: 150), 2)))
+    temp <- as.data.frame(t(simi))
 
-# define disimilar constrains
-dism <- t(as.matrix(tol[!tol %in% simi]))
+    # all pairs
+    tol <- as.data.frame(combn(1:(150), 2))
 
-# transform data using GdmDiag
-result_ <- GdmDiag(newData_[, 2:4], simi, dism)
+    # define disimilar constrains
+    dism <- t(as.matrix(tol[!tol %in% simi]))
 
-newData__ <- result_$newData
-print(newData__)
+    # transform data using GdmDiag
+    if (modeltype == "diag")
+        result <- GdmDiag(data, simi, dism)
+    if (modeltype == "full")
+        result <- GfmFull(data, simi, dism)
 
-# https://arxiv.org/pdf/1509.04355.pdf: paper on metric learning
+    model_ <- result$newData
+    # print(newData)
+
+    model__ <- data.frame(model_)
+    model__$Species <- y
+    return(model__)
+}
+
+rgl_add_axes <- function(x, y, z, axis.col = "grey",
+                                xlab = "", ylab="", zlab="", show.plane = TRUE, 
+                                show.bbox = FALSE, bbox.col = c("#333377","black"))
+    { 
+    
+    lim <- function(x){c(-max(abs(x)), max(abs(x))) * 1.1}
+    # Add axes
+    xlim <- lim(x); ylim <- lim(y); zlim <- lim(z)
+    rgl.lines(xlim, c(0, 0), c(0, 0), color = axis.col)
+    rgl.lines(c(0, 0), ylim, c(0, 0), color = axis.col)
+    rgl.lines(c(0, 0), c(0, 0), zlim, color = axis.col)
+    
+     # Add a point at the end of each axes to specify the direction
+     axes <- rbind(c(xlim[2], 0, 0), c(0, ylim[2], 0), 
+                                 c(0, 0, zlim[2]))
+     rgl.points(axes, color = axis.col, size = 3)
+    
+    # Add axis labels
+    rgl.texts(axes, text = c(xlab, ylab, zlab), color = axis.col,
+                         adj = c(0.5, -0.8), size = 2)
+    
+    # Add plane
+    if(show.plane) 
+        xlim <- xlim/1.1; zlim <- zlim /1.1
+        rgl.quads( x = rep(xlim, each = 2), y = c(0, 0, 0, 0),
+                         z = c(zlim[1], zlim[2], zlim[2], zlim[1]))
+    
+    # Add bounding box decoration
+    if(show.bbox){
+        rgl.bbox(color=c(bbox.col[1],bbox.col[2]), alpha = 0.5, 
+                    emission=bbox.col[1], specular=bbox.col[1], shininess=5, 
+                    xlen = 3, ylen = 3, zlen = 3) 
+    }
+}
+
+get_colors <- function(groups, group.col = palette())
+{
+    groups <- as.factor(groups)
+    ngrps <- length(levels(groups))
+    if(ngrps > length(group.col)) 
+        group.col <- rep(group.col, ngrps)
+    color <- group.col[as.numeric(groups)]
+    names(color) <- as.vector(groups)
+    return(color)
+}
+
+initialize(iris, 3)
+plotdata(data.frame(iris), iris$Species, 3)
+model__ <- applydml("diag")
+
+# plotdata(model__[, -1], iris$Species, 3)
+model_ <- svm(Species ~., data=model__)
+
+plotclassified(model_, model__)

@@ -67,7 +67,6 @@ initialize <- function(dat, dim_)
 applypca <- function()
 {
     mypca <- princomp(X, cor=TRUE, score=TRUE)
-    plot(mypca)
     model__ <- mypca$scores
     model__ = data.frame(mypca$scores)
 

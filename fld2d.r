@@ -1,7 +1,7 @@
 library(lfda)
 library(rgl)
 data(iris)
-library(e1071)
+
 
 X <- NULL
 y <- NULL
@@ -51,7 +51,6 @@ plotclassified <- function(model, data)
         plot(model, data, X1~X2)
         plot(model, data, X2~X3)
         plot(model, data, X3~X1)
-
         par(mfrow = c(1, 1))
     }
 }
