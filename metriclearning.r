@@ -49,8 +49,8 @@ plotclassified <- function(model, data)
     else if (dim == 3)
     {
         plot(model, data, X1~X2)
-        # plot(model, data, X2~X3)
-        # plot(model, data, X3~X1)
+        plot(model, data, X2~X3)
+        plot(model, data, X3~X1)
         par(mfrow = c(1, 1))
     }
 }
@@ -88,10 +88,6 @@ normalize <-function(x)
 
 applyanmm <- function()
 {
-
-
-    # model_ <- result$newData
-    # print(newData)
     model_ <- do.anmm(X, y, ndim=dim,No=6, Ne=6)$Y
     print(head(model_))
     X <<- data.frame(model_)
@@ -189,4 +185,3 @@ main <- function()
 }
 
 main()
-

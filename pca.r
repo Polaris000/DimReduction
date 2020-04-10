@@ -202,20 +202,18 @@ main <- function()
 
     
 
-    times_taken = times_taken/50
-    accuracies = accuracies/50
+    # times_taken = times_taken/50
+    # accuracies = accuracies/50
 
-    plot(3:ncol(dat_)-1,times_taken, type = "b",
-     xlab = "Number of dimensions",
-     ylab = "Average time taken in seconds",
-     main = "Effect of CoD on time taken in PCA + SVM")
+    #  ylab = "Average time taken in seconds",
+    #  main = "Effect of CoD on time taken in PCA + SVM")
 
-    plot(3:ncol(dat_)-1,accuracies, type = "b",
-     xlab = "Number of dimensions",
-     ylab = "Average accuracy",
-     main = "Effect of CoD on accuracy in PCA + SVM")
+    # plot(3:ncol(dat_)-1,accuracies, type = "b",
+    #  xlab = "Number of dimensions",
+    #  ylab = "Average accuracy",
+    #  main = "Effect of CoD on accuracy in PCA + SVM")
 
-    grid()        
+    # grid()        
 }
 
 main()

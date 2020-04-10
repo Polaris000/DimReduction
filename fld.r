@@ -192,8 +192,10 @@ main <- function()
             model_ <- svm(ytrain ~ ., data=traindata, type="C-classification")
             
             if((iter == 2  || iter == 3) && num == 10){
+
+                plotdata(X,y, iter)
                 
-                # plotclassified(model_, traindata)
+                plotclassified(model_, traindata)
             } 
             
             pr <- predict(model_, Xtest)
@@ -208,20 +210,20 @@ main <- function()
         }   
     }  
 
-    times_taken = times_taken/10
-    accuracies = accuracies/10
+    # times_taken = times_taken/10
+    # accuracies = accuracies/10
 
-    plot(3:ncol(dat_)-1,times_taken, type = "b",
-     xlab = "Number of dimensions",
-     ylab = "Average time taken in seconds",
-     main = "Effect of CoD on time taken in FLD + SVM")
+    # plot(3:ncol(dat_)-1,times_taken, type = "b",
+    #  xlab = "Number of dimensions",
+    #  ylab = "Average time taken in seconds",
+    #  main = "Effect of CoD on time taken in FLD + SVM")
 
-    plot(3:ncol(dat_)-1,accuracies, type = "b",
-     xlab = "Number of dimensions",
-     ylab = "Average accuracy",
-     main = "Effect of CoD on accuracy in FLD + SVM")
+    # plot(3:ncol(dat_)-1,accuracies, type = "b",
+    #  xlab = "Number of dimensions",
+    #  ylab = "Average accuracy",
+    #  main = "Effect of CoD on accuracy in FLD + SVM")
 
-    grid()              
+    # grid()              
 }
 
 main()
