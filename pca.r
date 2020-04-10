@@ -5,11 +5,13 @@ X <- NULL
 y <- NULL
 dim <- 3
 
-# TODO:
-# - train test split
-# - add legend to charts
-# - try on different dataset
-# - generate subplots 
+dat <- NULL
+
+Xtrain <- NULL
+Xtest <- NULL
+ytrain <- NULL
+ytest <- NULL
+
 
 rgl_init <- function(new.device = FALSE, bg = "gray", width = 640)
 { 
@@ -26,15 +28,42 @@ rgl_init <- function(new.device = FALSE, bg = "gray", width = 640)
 
 plotdata <- function(dat, cols, dim_)
 {
+    print(cols)
     if (dim_ == 2)
         plot(dat[, -ncol(dat)], col=cols)
+
     else if (dim_ == 3)
     {
         rgl_init()
-        rgl.spheres(dat[, 1], dat[, 2], dat[, 3], color = get_colors(dat$Species), r=0.01) 
+        rgl.spheres(dat[, 1], dat[, 2], dat[, 3], color = get_colors(cols), r=0.01) 
         rgl_add_axes(dat[, 1], dat[, 2], dat[, 3], show.bbox = TRUE)
         aspect3d(1,1,1)
     }
+}
+
+train_test_split <- function()
+{
+    select <- sample(1:nrow(dat), 0.9 * nrow(dat))
+    Xtrain <<- X[select,]
+    Xtest <<- X[-select,]
+
+    ytrain <<- y[select]
+    ytest <<- y[-select]
+
+}
+
+accuracy <- function(x)
+{
+    return (sum(diag(x)/(sum(rowSums(x)))) * 100)
+}
+
+normalize <-function(x)
+{
+    if(max(x) != min(x))
+        x = (x -min(x))/(max(x)-min(x))
+    else
+        x = x-x
+    return(x)
 }
 
 plotclassified <- function(model, data)
@@ -43,37 +72,40 @@ plotclassified <- function(model, data)
         plot(model, data)
     else if (dim == 3)
     {
-        par(mfrow = c(2, 2)) # 2-by-2 grid of plots
-        par(oma = c(4, 4, 0, 0)) # make room (i.e. the 4's) for the overall x and y axis titles
-        par(mar = c(2, 2, 1, 1)) # make the plots be closer together
-        plot(model, data, X1~X2)
-        plot(model, data, X2~X3)
-        plot(model, data, X3~X1)
+        plot(model, data, Comp.1~Comp.2)
+        plot(model, data, Comp.2~Comp.3)
+        plot(model, data, Comp.3~Comp.1)
         par(mfrow = c(1, 1))
     }
 }
 
-initialize <- function(dat, dim_)
+initialize <- function(dat_, dim_)
 {
+    dat <<- dat_
+
     rows <- nrow(dat)
     cols <- ncol(dat)
 
-    # kernelizing the model
-    X <<- kmatrixGauss(dat[, -cols])
     y <<- dat[, cols]
+
+    # normalize datahead
+    dat_norm <- as.data.frame(lapply(dat[,1:cols-1], normalize))
+
+    # to kernelize the data
+    # X <<- kmatrixGauss(dat_norm[, -cols])
+    X <<- dat_norm[, -cols]
     dim <<- dim_
 }
 
-applypca <- function()
+apply_pca <- function()
 {
-    mypca <- princomp(X, cor=TRUE, score=TRUE)
+    mypca <- princomp(X, cor=FALSE, score=TRUE)
     model__ <- mypca$scores
     model__ = data.frame(mypca$scores)
 
     # selecting best components based on dim
-    model__ = model__[, c(1:dim)]
-    model__$Species = y
-    return(model__)
+    X <<- model__[, c(1:dim)]
+    return(X)
 }
 
 rgl_add_axes <- function(x, y, z, axis.col = "grey",
@@ -123,9 +155,67 @@ get_colors <- function(groups, group.col = palette())
 }
 
 
-initialize(iris, 2)
-model__ <- applypca()
-# plotdata(model__, iris$Species, 2)
-model_ <- svm(Species ~., data=model__)
-# plotclassified(model_, model__)
+main <- function()
+{
 
+    dat_ <- read.csv("audit_risk.csv")
+    times_taken <- rep(0, ncol(dat_)-2)
+    accuracies <- rep(0, ncol(dat_)-2)
+    
+    
+
+    for(iter in c(2,3)){
+        for(num in 10:10){
+
+            start.time <- Sys.time()
+
+            initialize(dat_, iter)
+
+            apply_pca()
+
+            train_test_split()
+
+            traindata <- data.frame(cbind(Xtrain, ytrain))
+                        
+            model_ <- svm(ytrain ~ ., data=traindata, type="C-classification")
+            
+            if((iter == 2  || iter == 3) && num == 10){
+
+                 plotdata(X,y, iter)   
+                
+                 plotclassified(model_, traindata)
+            }    
+
+            pr = predict(model_, newdata = Xtest , type ='class')
+            
+            tab <- table(pr, ytest)
+            accuracies[iter-1] = accuracies[iter-1] + accuracy(tab)
+
+            end.time <- Sys.time()
+            times_taken[iter-1] = times_taken[iter-1] + end.time - start.time
+
+            
+        }
+        print("iteration")
+        print(accuracies[iter-1])
+    }
+
+    
+
+    times_taken = times_taken/50
+    accuracies = accuracies/50
+
+    plot(3:ncol(dat_)-1,times_taken, type = "b",
+     xlab = "Number of dimensions",
+     ylab = "Average time taken in seconds",
+     main = "Effect of CoD on time taken in PCA + SVM")
+
+    plot(3:ncol(dat_)-1,accuracies, type = "b",
+     xlab = "Number of dimensions",
+     ylab = "Average accuracy",
+     main = "Effect of CoD on accuracy in PCA + SVM")
+
+    grid()        
+}
+
+main()

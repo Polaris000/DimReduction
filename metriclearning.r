@@ -1,37 +1,20 @@
 library("dml")
 
 data(iris)
-k <- iris[, -5]
-y <- iris[, 5]
-
-
-
-library(MASS)
-library(scatterplot3d)
-
-
-data <- k
-k <- 50
-
-# define similar constrains
-
-
-# plot original data
-color <- c("red", "blue", "yellow")
-# par(mfrow = c(2, 1), mar = rep(0, 4) + 0.1)
 
 library(rgl)
-data(iris)
 
 X <- NULL
 y <- NULL
 dim <- 3
 
-# TODO:
-# - train test split
-# - add legend to charts
-# - try on different dataset
-# - generate subplots 
+dat <- NULL
+
+Xtrain <- NULL
+Xtest <- NULL
+ytrain <- NULL
+ytest <- NULL
+
 
 rgl_init <- function(new.device = FALSE, bg = "gray", width = 640)
 { 
@@ -65,50 +48,69 @@ plotclassified <- function(model, data)
         plot(model, data)
     else if (dim == 3)
     {
-        par(mfrow = c(2, 2)) # 2-by-2 grid of plots
-        par(oma = c(4, 4, 0, 0)) # make room (i.e. the 4's) for the overall x and y axis titles
-        par(mar = c(2, 2, 1, 1)) # make the plots be closer together
         plot(model, data, X1~X2)
-        plot(model, data, X2~X3)
-        plot(model, data, X3~X1)
+        # plot(model, data, X2~X3)
+        # plot(model, data, X3~X1)
         par(mfrow = c(1, 1))
     }
 }
 
-initialize <- function(dat, dim_)
+initialize <- function(dat_, dim_)
 {
+    dat <<- dat_
+
     rows <- nrow(dat)
     cols <- ncol(dat)
 
-    # kernelizing the model
-    X <<- kmatrixGauss(dat[, -cols])
     y <<- dat[, cols]
+
+    # normalize data
+    dat_norm <- as.data.frame(lapply(dat[,1:cols-1], normalize))
+
+    X <<- kmatrixGauss(dat_norm[, -cols])
+    
     dim <<- dim_
 }
 
-applydml <- function(modeltype)
+accuracy <- function(x)
 {
-    simi <- rbind(t(combn(1:50, 2)), t(combn((51):(100), 2)), t(combn((101: 150), 2)))
-    temp <- as.data.frame(t(simi))
+    return (sum(diag(x)/(sum(rowSums(x)))) * 100)
+}
 
-    # all pairs
-    tol <- as.data.frame(combn(1:(150), 2))
+normalize <-function(x) 
+{
+    if(max(x) != min(x))
+        x = (x -min(x))/(max(x)-min(x))
+    else
+        x = x-x
+    return(x)
+}
 
-    # define disimilar constrains
-    dism <- t(as.matrix(tol[!tol %in% simi]))
+applyanmm <- function()
+{
 
-    # transform data using GdmDiag
-    if (modeltype == "diag")
-        result <- GdmDiag(data, simi, dism)
-    if (modeltype == "full")
-        result <- GfmFull(data, simi, dism)
 
-    model_ <- result$newData
+    # model_ <- result$newData
     # print(newData)
+    model_ <- do.anmm(X, y, ndim=dim,No=6, Ne=6)$Y
+    print(head(model_))
+    X <<- data.frame(model_)
+    print("in applyanmm")
+    print(ncol(X))
+    return(X)
+}
 
-    model__ <- data.frame(model_)
-    model__$Species <- y
-    return(model__)
+train_test_split <- function()
+{
+
+    # train-test split
+    select <- sample(1:nrow(dat), 0.9 * nrow(dat))
+    Xtrain <<- X[select,]
+    Xtest <<- X[-select,]
+
+    ytrain <<- y[select]
+    ytest <<- y[-select]
+    
 }
 
 rgl_add_axes <- function(x, y, z, axis.col = "grey",
@@ -157,11 +159,34 @@ get_colors <- function(groups, group.col = palette())
     return(color)
 }
 
-initialize(iris, 3)
-plotdata(data.frame(iris), iris$Species, 3)
-model__ <- applydml("diag")
+main <- function()
+{
+    dat_ <- read.csv("audit_risk.csv")
+    initialize(dat_, 2)
 
-# plotdata(model__[, -1], iris$Species, 3)
-model_ <- svm(Species ~., data=model__)
+    model__ <- applyanmm()
+    print(ncol(X))
 
-plotclassified(model_, model__)
+    train_test_split()
+
+    traindata <- data.frame(cbind(Xtrain, ytrain))
+    print(ncol(traindata))
+
+    if (dim == 3)
+        colnames(traindata) <- c("X1", "X2", "X3", "ytrain")
+    
+    if (dim == 2)
+        colnames(traindata) <- c("X1", "X2", "ytrain")
+
+    model_ <- svm(ytrain ~ ., data=traindata, type="C-classification")
+
+    plotclassified(model_, traindata)
+
+    pr <- predict(model_, Xtest)
+    print(pr)
+    tab <- table(pr,ytest)
+    print(accuracy(tab))
+}
+
+main()
+
